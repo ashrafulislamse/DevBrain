@@ -1,0 +1,7 @@
+# Vercel ignore - files to exclude from deployment
+.env.local
+.env*.local
+*.log
+coverage
+.vscode
+.idea
