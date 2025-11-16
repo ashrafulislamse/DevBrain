@@ -1,0 +1,617 @@
+# DevBrain - Cursor/Copilot AI Rules
+
+## Project Overview
+DevBrain is an all-in-one DevOps control center and developer productivity dashboard built with Next.js 14+, TypeScript, Prisma, and shadcn/ui. It combines server management, monitoring, developer tools, and AI assistance into a unified platform.
+
+## Tech Stack
+- **Framework**: Next.js 14+ (App Router, Server Components)
+- **Language**: TypeScript (strict mode)
+- **Styling**: Tailwind CSS + shadcn/ui components
+- **Database**: PostgreSQL + Prisma ORM
+- **State**: Zustand + TanStack Query (React Query)
+- **API**: tRPC for type-safe APIs
+- **Real-time**: Socket.io / Server-Sent Events
+- **Auth**: NextAuth.js v5 (Auth.js)
+- **Forms**: React Hook Form + Zod validation
+- **Charts**: Recharts
+- **Code Editor**: Monaco Editor
+- **Terminal**: xterm.js
+
+## Code Style & Conventions
+
+### TypeScript
+- Always use strict TypeScript
+- Define proper types/interfaces, avoid `any`
+- Use type inference where possible
+- Prefer interfaces over types for object shapes
+- Use enums for fixed sets of values
+- Use const assertions for literal types
+
+```typescript
+// Good
+interface ServerConfig {
+  host: string;
+  port: number;
+  username: string;
+}
+
+// Bad
+type ServerConfig = {
+  host: any;
+  port: any;
+};
+```
+
+### React Components
+- Use functional components with hooks
+- Prefer Server Components by default (mark with 'use client' only when needed)
+- Name components with PascalCase
+- One component per file (except small related components)
+- Co-locate component files: `ComponentName/index.tsx`, `ComponentName/styles.ts`
+
+```typescript
+// Good - Server Component
+interface DashboardProps {
+  userId: string;
+}
+
+export default async function Dashboard({ userId }: DashboardProps) {
+  const data = await fetchData(userId);
+  return <div>{/* ... */}</div>;
+}
+
+// Good - Client Component
+'use client';
+
+import { useState } from 'react';
+
+export function InteractiveWidget() {
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount(count + 1)}>{count}</button>;
+}
+```
+
+### File Naming
+- Components: PascalCase (`ServerCard.tsx`)
+- Utils/Hooks: camelCase (`useServerMetrics.ts`)
+- API routes: kebab-case (`get-servers.ts`)
+- Types: PascalCase (`ServerTypes.ts`)
+
+### Import Order
+```typescript
+// 1. React & Next.js
+import { useState } from 'react';
+import Link from 'next/link';
+
+// 2. External libraries
+import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+
+// 3. Internal utilities
+import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
+
+// 4. Types
+import type { Server } from '@/types';
+
+// 5. Relative imports
+import { ServerCard } from './ServerCard';
+```
+
+### Folder Structure
+```
+src/
+├── app/                      # Next.js App Router
+│   ├── (auth)/              # Auth route group
+│   ├── (dashboard)/         # Dashboard route group
+│   ├── api/                 # API routes
+│   └── layout.tsx
+├── components/
+│   ├── ui/                  # shadcn/ui components
+│   ├── dashboard/           # Dashboard-specific
+│   ├── devops/              # DevOps-specific
+│   └── shared/              # Shared components
+├── lib/
+│   ├── api/                 # API clients
+│   ├── utils/               # Utilities
+│   └── constants/           # Constants
+├── hooks/                    # Custom React hooks
+├── store/                    # Zustand stores
+├── types/                    # TypeScript types
+└── styles/                   # Global styles
+```
+
+## Coding Patterns
+
+### Server Actions
+```typescript
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { db } from '@/lib/db';
+
+export async function createServer(data: CreateServerInput) {
+  const server = await db.server.create({
+    data: {
+      ...data,
+      userId: await getCurrentUserId(),
+    },
+  });
+
+  revalidatePath('/dashboard/servers');
+  return server;
+}
+```
+
+### tRPC Procedures
+```typescript
+import { z } from 'zod';
+import { router, protectedProcedure } from '../trpc';
+
+export const serverRouter = router({
+  getAll: protectedProcedure
+    .query(async ({ ctx }) => {
+      return ctx.db.server.findMany({
+        where: { userId: ctx.user.id },
+      });
+    }),
+
+  create: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      host: z.string().ip(),
+      port: z.number().int().positive(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      return ctx.db.server.create({
+        data: { ...input, userId: ctx.user.id },
+      });
+    }),
+});
+```
+
+### Form Handling
+```typescript
+'use client';
+
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+
+const serverSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  host: z.string().ip('Invalid IP address'),
+  port: z.number().int().positive(),
+});
+
+type ServerFormData = z.infer<typeof serverSchema>;
+
+export function ServerForm() {
+  const { register, handleSubmit, formState: { errors } } = useForm<ServerFormData>({
+    resolver: zodResolver(serverSchema),
+  });
+
+  const onSubmit = async (data: ServerFormData) => {
+    // Handle submission
+  };
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input {...register('name')} />
+      {errors.name && <span>{errors.name.message}</span>}
+      {/* ... */}
+    </form>
+  );
+}
+```
+
+### State Management (Zustand)
+```typescript
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+interface AppState {
+  sidebarCollapsed: boolean;
+  toggleSidebar: () => void;
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+}
+
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      sidebarCollapsed: false,
+      toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+      theme: 'dark',
+      setTheme: (theme) => set({ theme }),
+    }),
+    { name: 'app-storage' }
+  )
+);
+```
+
+### Data Fetching (TanStack Query)
+```typescript
+'use client';
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+
+export function useServers() {
+  return useQuery({
+    queryKey: ['servers'],
+    queryFn: async () => {
+      const res = await fetch('/api/servers');
+      return res.json();
+    },
+    refetchInterval: 30000, // Refetch every 30s
+  });
+}
+
+export function useCreateServer() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: CreateServerInput) => {
+      const res = await fetch('/api/servers', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['servers'] });
+    },
+  });
+}
+```
+
+### Real-time Updates (Server-Sent Events)
+```typescript
+// Client
+'use client';
+
+import { useEffect, useState } from 'react';
+
+export function useServerMetrics(serverId: string) {
+  const [metrics, setMetrics] = useState<ServerMetrics | null>(null);
+
+  useEffect(() => {
+    const eventSource = new EventSource(`/api/servers/${serverId}/metrics`);
+
+    eventSource.onmessage = (event) => {
+      setMetrics(JSON.parse(event.data));
+    };
+
+    return () => eventSource.close();
+  }, [serverId]);
+
+  return metrics;
+}
+
+// Server (API Route)
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  const stream = new ReadableStream({
+    start(controller) {
+      const interval = setInterval(async () => {
+        const metrics = await getServerMetrics(params.id);
+        controller.enqueue(`data: ${JSON.stringify(metrics)}\n\n`);
+      }, 5000);
+
+      request.signal.addEventListener('abort', () => {
+        clearInterval(interval);
+        controller.close();
+      });
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+    },
+  });
+}
+```
+
+## UI/UX Guidelines
+
+### Component Composition
+```typescript
+// Use composition with shadcn/ui
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+
+export function ServerCard({ server }: { server: Server }) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{server.name}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <StatusBadge status={server.status} />
+          <Button variant="outline" size="sm">Manage</Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+### Responsive Design
+```typescript
+// Use Tailwind responsive utilities
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {servers.map(server => <ServerCard key={server.id} server={server} />)}
+</div>
+```
+
+### Loading States
+```typescript
+import { Skeleton } from '@/components/ui/skeleton';
+
+export function ServerListSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <Skeleton key={i} className="h-24 w-full" />
+      ))}
+    </div>
+  );
+}
+
+// Usage with Suspense
+import { Suspense } from 'react';
+
+export default function ServersPage() {
+  return (
+    <Suspense fallback={<ServerListSkeleton />}>
+      <ServerList />
+    </Suspense>
+  );
+}
+```
+
+### Error Handling
+```typescript
+// error.tsx (Next.js error boundary)
+'use client';
+
+export default function Error({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <h2 className="text-2xl font-bold mb-4">Something went wrong!</h2>
+      <Button onClick={reset}>Try again</Button>
+    </div>
+  );
+}
+```
+
+## Database Patterns (Prisma)
+
+### Queries
+```typescript
+// Include relations
+const server = await db.server.findUnique({
+  where: { id: serverId },
+  include: {
+    metrics: {
+      take: 10,
+      orderBy: { timestamp: 'desc' },
+    },
+    services: true,
+  },
+});
+
+// Filtering & pagination
+const servers = await db.server.findMany({
+  where: {
+    userId,
+    status: 'ONLINE',
+  },
+  skip: (page - 1) * pageSize,
+  take: pageSize,
+  orderBy: { createdAt: 'desc' },
+});
+
+// Aggregation
+const stats = await db.serverMetric.aggregate({
+  where: { serverId },
+  _avg: { cpuUsage: true, memoryUsage: true },
+  _max: { cpuUsage: true },
+});
+```
+
+### Transactions
+```typescript
+const result = await db.$transaction(async (tx) => {
+  const server = await tx.server.create({ data: serverData });
+
+  await tx.service.createMany({
+    data: [
+      { serverId: server.id, name: 'nginx', type: 'NGINX' },
+      { serverId: server.id, name: 'mysql', type: 'MYSQL' },
+    ],
+  });
+
+  return server;
+});
+```
+
+## Security Best Practices
+
+### Input Validation
+```typescript
+// Always validate with Zod
+import { z } from 'zod';
+
+const createServerSchema = z.object({
+  name: z.string().min(1).max(100),
+  host: z.string().ip().or(z.string().url()),
+  port: z.number().int().min(1).max(65535),
+  username: z.string().min(1),
+});
+
+// Sanitize inputs
+import DOMPurify from 'isomorphic-dompurify';
+
+const sanitized = DOMPurify.sanitize(userInput);
+```
+
+### Authentication
+```typescript
+// Protect API routes
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
+export async function GET(request: Request) {
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+
+  // Proceed...
+}
+```
+
+### Environment Variables
+```typescript
+// Use zod for env validation
+import { z } from 'zod';
+
+const envSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  NEXTAUTH_SECRET: z.string().min(32),
+  OPENAI_API_KEY: z.string().optional(),
+});
+
+export const env = envSchema.parse(process.env);
+```
+
+## Performance Optimization
+
+### Code Splitting
+```typescript
+// Dynamic imports
+import dynamic from 'next/dynamic';
+
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-96" />,
+});
+```
+
+### Memoization
+```typescript
+import { useMemo, memo } from 'react';
+
+export const ExpensiveComponent = memo(function ExpensiveComponent({ data }: Props) {
+  const processedData = useMemo(() => {
+    return expensiveComputation(data);
+  }, [data]);
+
+  return <div>{processedData}</div>;
+});
+```
+
+### Image Optimization
+```typescript
+import Image from 'next/image';
+
+<Image
+  src="/server-icon.png"
+  alt="Server"
+  width={64}
+  height={64}
+  priority={isAboveFold}
+/>
+```
+
+## Testing
+
+### Unit Tests (Vitest)
+```typescript
+import { describe, it, expect } from 'vitest';
+import { formatBytes } from '@/lib/utils';
+
+describe('formatBytes', () => {
+  it('should format bytes correctly', () => {
+    expect(formatBytes(1024)).toBe('1.00 KB');
+    expect(formatBytes(1048576)).toBe('1.00 MB');
+  });
+});
+```
+
+### Component Tests (Testing Library)
+```typescript
+import { render, screen } from '@testing-library/react';
+import { ServerCard } from './ServerCard';
+
+it('should display server name', () => {
+  render(<ServerCard server={{ name: 'Test Server' }} />);
+  expect(screen.getByText('Test Server')).toBeInTheDocument();
+});
+```
+
+## Accessibility
+
+- Use semantic HTML
+- Add ARIA labels where needed
+- Ensure keyboard navigation
+- Maintain color contrast (WCAG AA)
+- Use proper heading hierarchy
+
+```typescript
+<button
+  aria-label="Close dialog"
+  onClick={onClose}
+  className="sr-only focus:not-sr-only"
+>
+  Close
+</button>
+```
+
+## Code Generation Instructions
+
+When generating code for DevBrain:
+
+1. **Always use TypeScript** with proper types
+2. **Follow the folder structure** defined above
+3. **Use shadcn/ui components** for UI elements
+4. **Implement proper error handling** with try-catch and error boundaries
+5. **Add loading states** for async operations
+6. **Validate all inputs** with Zod
+7. **Use Server Components** by default, Client Components only when needed
+8. **Add JSDoc comments** for complex functions
+9. **Follow naming conventions** strictly
+10. **Optimize for performance** (memoization, code splitting)
+11. **Make it accessible** (ARIA, semantic HTML)
+12. **Add proper security** (auth checks, sanitization)
+
+## Example: Full Feature Implementation
+
+When I ask to "create a server monitoring dashboard", generate:
+
+1. **Page Component** (`app/(dashboard)/servers/page.tsx`)
+2. **Server Component** for data fetching
+3. **Client Components** for interactive parts
+4. **API Route** or tRPC procedure
+5. **Database queries** with Prisma
+6. **Type definitions**
+7. **Validation schemas** with Zod
+8. **UI components** using shadcn/ui
+9. **Loading & error states**
+10. **Tests** for critical logic
+
+Generate clean, production-ready code that follows all conventions above.
