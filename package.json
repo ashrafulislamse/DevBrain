@@ -21,6 +21,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.4",
+    "@monaco-editor/react": "^4.7.0",
     "@prisma/client": "^5.10.2",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
@@ -58,6 +59,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-hook-form": "^7.51.0",
+    "react-split": "^2.0.14",
     "recharts": "^2.12.2",
     "sonner": "^1.4.3",
     "ssh2": "^1.15.0",
