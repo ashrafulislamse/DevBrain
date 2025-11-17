@@ -35,6 +35,9 @@ import {
   FileCode,
   TrendingUp,
   CreditCard,
+  Zap,
+  Users as UsersIcon,
+  Terminal as TerminalIcon,
 } from 'lucide-react';
 
 const navigation = [
@@ -51,10 +54,14 @@ const navigation = [
   { name: 'Invoices', href: '/invoices', icon: Receipt },
   { name: 'Proposals', href: '/proposals', icon: FileSignature },
   { name: 'Contracts', href: '/contracts', icon: FileSignature },
+  { name: 'Client Portal', href: '/client-portal', icon: UsersIcon },
   { name: 'Security', href: '/security', icon: Shield, badge: '5' },
   { name: 'Config Gen', href: '/config-generators', icon: FileCode },
   { name: 'SEO Suite', href: '/seo-suite', icon: TrendingUp, badge: '6' },
+  { name: 'SSH Terminal', href: '/ssh-terminal', icon: TerminalIcon },
+  { name: 'AI DevOps', href: '/ai-devops', icon: Zap, badge: '8' },
   { name: 'Stripe', href: '/integrations/stripe', icon: CreditCard },
+  { name: 'Advanced Int', href: '/integrations/advanced', icon: Plug },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Bot },
   { name: 'Monitoring', href: '/monitoring', icon: Activity },
   { name: 'Logs', href: '/logs', icon: FileText },
