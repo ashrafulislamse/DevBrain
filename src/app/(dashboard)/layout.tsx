@@ -81,17 +81,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-gray-950 dark:via-slate-900 dark:to-gray-900">
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-r border-gray-200/50 dark:border-gray-700/50 shadow-xl transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static ${
+        className={`fixed inset-y-0 left-0 z-50 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 shadow-xl flex flex-col transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } ${sidebarCollapsed ? 'w-20' : 'w-64'}`}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 h-16 px-6 border-b border-gray-200/50 dark:border-gray-700/50">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-600 shadow-lg shadow-purple-500/50">
+        <div className="flex-shrink-0 flex items-center gap-3 h-16 px-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 shadow-lg shadow-purple-500/50">
             <Brain className="w-6 h-6 text-white" />
           </div>
           {!sidebarCollapsed && (
-            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent whitespace-nowrap">
+            <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent whitespace-nowrap">
               DevBrain
             </span>
           )}
@@ -100,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Collapse Toggle (Desktop) */}
         <button
           onClick={toggleCollapse}
-          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110"
+          className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 items-center justify-center bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-md hover:shadow-lg transition-all duration-200 hover:scale-110 z-10"
         >
           {sidebarCollapsed ? (
             <ChevronRight className="w-3 h-3" />
@@ -109,8 +109,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
         </button>
 
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-1 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
+        {/* Navigation - Scrollable */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-1">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             return (
@@ -120,7 +120,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 className={`group flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive
                     ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/30'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800/50 hover:scale-[1.02]'
+                    : 'text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-[1.02]'
                 }`}
                 onClick={() => setSidebarOpen(false)}
                 title={sidebarCollapsed ? item.name : ''}
@@ -130,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   {!sidebarCollapsed && <span className="whitespace-nowrap">{item.name}</span>}
                 </div>
                 {!sidebarCollapsed && item.badge && (
-                  <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300 border-0">
+                  <Badge variant="secondary" className="text-xs bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 border-0 font-semibold">
                     {item.badge}
                   </Badge>
                 )}
@@ -140,22 +140,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* User Profile */}
-        <div className="p-4 border-t border-gray-200/50 dark:border-gray-700/50">
+        <div className="flex-shrink-0 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           {!sidebarCollapsed ? (
             <>
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 flex items-center justify-center text-white font-semibold shadow-lg shadow-purple-500/30">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold shadow-lg shadow-purple-500/30">
                   {user?.name?.[0] || 'A'}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">{user?.name}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user?.email}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{user?.email}</p>
                 </div>
               </div>
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full border-gray-200 dark:border-gray-700 hover:bg-red-50 hover:border-red-300 hover:text-red-600 dark:hover:bg-red-900/20 transition-all duration-200"
+                className="w-full border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 hover:bg-red-50 hover:border-red-300 hover:text-red-600 dark:hover:bg-red-900/30 transition-all duration-200"
                 onClick={handleLogout}
               >
                 <LogOut className="w-4 h-4 mr-2" />
@@ -165,7 +165,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           ) : (
             <button
               onClick={handleLogout}
-              className="w-10 h-10 mx-auto flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-gray-700 dark:text-gray-300 hover:text-red-600 transition-all duration-200"
+              className="w-10 h-10 mx-auto flex items-center justify-center rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 text-gray-900 dark:text-gray-100 hover:text-red-600 transition-all duration-200"
               title="Logout"
             >
               <LogOut className="w-5 h-5" />
@@ -217,109 +217,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden">
-          <div className="min-h-full">
-            <div className="container mx-auto p-6 pb-8 max-w-[1920px]">{children}</div>
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="container mx-auto p-6 max-w-[1920px]">{children}</div>
+          </div>
 
-            {/* Footer */}
-            <footer className="border-t border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm mt-16">
-              <div className="container mx-auto px-6 py-8 max-w-[1920px]">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                  {/* Brand */}
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-                        <Brain className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                        DevBrain
-                      </span>
-                    </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                      All-in-one developer control panel for modern teams. Manage servers, code, workflows, and more.
-                    </p>
+          {/* Footer - Simple */}
+          <footer className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+            <div className="container mx-auto px-6 py-4 max-w-[1920px]">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+                    <Brain className="w-4 h-4 text-white" />
                   </div>
-
-                  {/* Product */}
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4">Product</h4>
-                    <ul className="space-y-2.5">
-                      {[
-                        { name: 'Dashboard', href: '/dashboard' },
-                        { name: 'Playground', href: '/playground' },
-                        { name: 'Projects', href: '/projects' },
-                        { name: 'Workflows', href: '/workflows' },
-                      ].map((item) => (
-                        <li key={item.name}>
-                          <Link
-                            href={item.href}
-                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                          >
-                            {item.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Resources */}
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4">Resources</h4>
-                    <ul className="space-y-2.5">
-                      {['Documentation', 'API Reference', 'Tutorials', 'Blog'].map((item) => (
-                        <li key={item}>
-                          <a
-                            href="#"
-                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                          >
-                            {item}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Company */}
-                  <div>
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4">Company</h4>
-                    <ul className="space-y-2.5">
-                      {['About', 'Careers', 'Contact', 'Privacy'].map((item) => (
-                        <li key={item}>
-                          <a
-                            href="#"
-                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
-                          >
-                            {item}
-                          </a>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">DevBrain</span>
+                  <span className="text-xs text-gray-500 dark:text-gray-400">© 2024</span>
                 </div>
-
-                {/* Bottom Bar */}
-                <div className="pt-6 border-t border-gray-200/50 dark:border-gray-700/50 flex flex-col md:flex-row items-center justify-between gap-4">
-                  <p className="text-xs text-gray-500 dark:text-gray-500">
-                    © 2024 DevBrain. All rights reserved.
-                  </p>
-                  <div className="flex items-center gap-6">
-                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                      Terms
-                    </a>
-                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                      Privacy
-                    </a>
-                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                      Security
-                    </a>
-                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
-                      Status
-                    </a>
-                  </div>
+                <div className="flex items-center gap-6">
+                  <Link href="/dashboard" className="text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                    Dashboard
+                  </Link>
+                  <Link href="/playground" className="text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                    Playground
+                  </Link>
+                  <a href="#" className="text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                    Docs
+                  </a>
+                  <a href="#" className="text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                    Support
+                  </a>
                 </div>
               </div>
-            </footer>
-          </div>
+            </div>
+          </footer>
         </main>
       </div>
 
