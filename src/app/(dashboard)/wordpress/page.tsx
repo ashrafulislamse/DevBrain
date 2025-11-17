@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
-  Wordpress,
+  Globe,
   Plug,
   Palette,
   Database,
@@ -724,7 +724,7 @@ export default function WordPressPage() {
           </p>
         </div>
         <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0">
-          <Wordpress className="w-3 h-3 mr-1" />
+          <Globe className="w-3 h-3 mr-1" />
           {WP_TOOLS.length} Tools
         </Badge>
       </div>
@@ -752,7 +752,7 @@ export default function WordPressPage() {
               onClick={() => setIsConnected(true)}
               className="w-full bg-gradient-to-r from-blue-600 to-indigo-600"
             >
-              <Wordpress className="w-4 h-4 mr-2" />
+              <Globe className="w-4 h-4 mr-2" />
               Connect Site
             </Button>
           </CardContent>

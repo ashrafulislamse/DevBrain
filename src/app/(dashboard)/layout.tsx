@@ -39,7 +39,7 @@ import {
   Users as UsersIcon,
   Terminal as TerminalIcon,
   Wand2,
-  Wordpress,
+  Globe as Wordpress,
   GitBranch,
 } from 'lucide-react';
 
