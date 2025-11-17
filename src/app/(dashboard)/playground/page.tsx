@@ -7,978 +7,939 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Play,
+  Square,
   Download,
-  Share2,
-  Plus,
-  X,
+  Upload,
   Settings,
-  FileCode,
-  Eye,
-  EyeOff,
-  Terminal,
-  Code,
-  Layers,
   Maximize2,
   Minimize2,
-  ExternalLink,
+  FolderTree,
+  Terminal as TerminalIcon,
+  GitBranch,
+  Search,
   Save,
-  Upload,
-  Trash2,
-  Copy,
-  CheckCircle2,
+  FileCode,
+  Plus,
+  X,
+  ChevronRight,
+  Folder,
+  File,
   Moon,
   Sun,
-  AlignLeft,
-  RefreshCw,
+  Sparkles,
+  Copy,
+  Check,
+  RotateCcw,
   Zap,
-  Grid3x3,
-  SplitSquareHorizontal,
+  Layers,
+  Code2,
 } from 'lucide-react';
 
-// Dynamically import Monaco to avoid SSR issues
+// Dynamically import Monaco Editor (client-side only)
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
   loading: () => (
-    <div className="flex items-center justify-center h-full bg-gray-950">
+    <div className="flex items-center justify-center h-full bg-[#1e1e1e]">
       <div className="flex flex-col items-center gap-3">
         <div className="w-12 h-12 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-400 text-sm animate-pulse">Loading Monaco Editor...</p>
+        <p className="text-gray-400 text-sm">Loading Monaco Editor...</p>
       </div>
     </div>
   ),
 });
 
-interface FileTab {
+interface FileNode {
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  language?: string;
+  content?: string;
+  children?: FileNode[];
+  isOpen?: boolean;
+}
+
+interface Tab {
   id: string;
   name: string;
   language: string;
   content: string;
+  isDirty: boolean;
 }
 
-type PlaygroundMode = 'html-css-js' | 'react' | 'python' | 'nodejs' | 'sql';
-type LayoutMode = 'split' | 'preview-only' | 'editor-only';
-
-const playgroundTemplates: Record<PlaygroundMode, FileTab[]> = {
-  'html-css-js': [
-    {
-      id: '1',
-      name: 'index.html',
-      language: 'html',
-      content: `<!DOCTYPE html>
+const INITIAL_FILE_TREE: FileNode[] = [
+  {
+    id: '1',
+    name: 'src',
+    type: 'folder',
+    isOpen: true,
+    children: [
+      {
+        id: '2',
+        name: 'index.html',
+        type: 'file',
+        language: 'html',
+        content: `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DevBrain Playground</title>
+    <title>DevBrain IDE</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="container">
-        <div class="card">
-            <h1>DevBrain Playground</h1>
-            <p>Professional code editor with live preview</p>
-            <button onclick="handleClick()" class="btn">Click Me</button>
-            <div id="output"></div>
-        </div>
+        <h1>Welcome to DevBrain IDE</h1>
+        <p>Professional development environment in your browser</p>
+        <button onclick="handleClick()">Click Me</button>
+        <div id="output"></div>
     </div>
+    <script src="script.js"></script>
 </body>
 </html>`,
-    },
-    {
-      id: '2',
-      name: 'styles.css',
-      language: 'css',
-      content: `* {
+      },
+      {
+        id: '3',
+        name: 'styles.css',
+        type: 'file',
+        language: 'css',
+        content: `* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Segoe UI', system-ui, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 20px;
 }
 
 .container {
-    width: 100%;
+    background: white;
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
     max-width: 600px;
 }
 
-.card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 3rem;
-    border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    text-align: center;
-    animation: fadeIn 0.5s ease-out;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
 h1 {
-    font-size: 2.5rem;
+    color: #667eea;
     margin-bottom: 1rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 800;
+    font-size: 2.5rem;
 }
 
 p {
-    font-size: 1.1rem;
+    color: #666;
     margin-bottom: 2rem;
-    color: #555;
 }
 
-.btn {
+button {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    padding: 1rem 2.5rem;
+    padding: 1rem 2rem;
+    border-radius: 10px;
     font-size: 1rem;
-    border-radius: 12px;
-    cursor: pointer;
     font-weight: 600;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.btn:hover {
+button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
 }
 
-.btn:active {
+button:active {
     transform: translateY(0);
 }
 
 #output {
-    margin-top: 2rem;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #667eea;
-    animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #f7f7f7;
+    border-radius: 10px;
+    min-height: 50px;
+    color: #333;
+    font-weight: 500;
 }`,
-    },
-    {
-      id: '3',
-      name: 'script.js',
-      language: 'javascript',
-      content: `function handleClick() {
+      },
+      {
+        id: '4',
+        name: 'script.js',
+        type: 'file',
+        language: 'javascript',
+        content: `function handleClick() {
     console.log('Button clicked!');
 
     const output = document.getElementById('output');
     output.textContent = 'Success! You clicked the button!';
+    output.style.background = '#d4edda';
+    output.style.color = '#155724';
 
     setTimeout(() => {
         output.textContent = '';
+        output.style.background = '#f7f7f7';
     }, 3000);
 }
 
 // Welcome message
-console.log('%c Welcome to DevBrain Playground! ',
-    'background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 10px; border-radius: 5px; font-size: 14px;');
+console.log('%c Welcome to DevBrain IDE! ', 'background: #667eea; color: white; font-size: 16px; padding: 10px; border-radius: 5px;');
 
-console.log('Edit the code and see live changes!');`,
-    },
-  ],
-  react: [
-    {
-      id: '1',
-      name: 'App.jsx',
-      language: 'javascript',
-      content: `import React, { useState } from 'react';
+// Auto-run initialization
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM loaded and ready!');
+});`,
+      },
+    ],
+  },
+  {
+    id: '5',
+    name: 'components',
+    type: 'folder',
+    isOpen: false,
+    children: [
+      {
+        id: '6',
+        name: 'App.tsx',
+        type: 'file',
+        language: 'typescript',
+        content: `import React from 'react';
 
-function App() {
-  const [count, setCount] = useState(0);
-
-  return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h1 style={styles.title}>⚛️ React Playground</h1>
-        <p style={styles.text}>Counter: {count}</p>
-        <div style={styles.buttonGroup}>
-          <button onClick={() => setCount(count - 1)} style={styles.button}>
-            Decrement
-          </button>
-          <button onClick={() => setCount(0)} style={styles.buttonSecondary}>
-            Reset
-          </button>
-          <button onClick={() => setCount(count + 1)} style={styles.button}>
-            Increment
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+interface AppProps {
+  title: string;
 }
 
-const styles = {
-  container: {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    padding: '20px',
-  },
-  card: {
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(10px)',
-    padding: '3rem',
-    borderRadius: '24px',
-    boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3)',
-    textAlign: 'center',
-    maxWidth: '500px',
-  },
-  title: {
-    fontSize: '2.5rem',
-    marginBottom: '2rem',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
-    fontWeight: '800',
-  },
-  text: {
-    fontSize: '3rem',
-    marginBottom: '2rem',
-    color: '#667eea',
-    fontWeight: 'bold',
-  },
-  buttonGroup: {
-    display: 'flex',
-    gap: '1rem',
-    justifyContent: 'center',
-  },
-  button: {
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    color: 'white',
-    border: 'none',
-    padding: '1rem 2rem',
-    fontSize: '1rem',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    fontWeight: '600',
-    boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
-  },
-  buttonSecondary: {
-    background: 'white',
-    color: '#667eea',
-    border: '2px solid #667eea',
-    padding: '1rem 2rem',
-    fontSize: '1rem',
-    borderRadius: '12px',
-    cursor: 'pointer',
-    fontWeight: '600',
-  },
+const App: React.FC<AppProps> = ({ title }) => {
+  const [count, setCount] = React.useState(0);
+
+  return (
+    <div className="app">
+      <h1>{title}</h1>
+      <button onClick={() => setCount(count + 1)}>
+        Count: {count}
+      </button>
+    </div>
+  );
 };
 
 export default App;`,
-    },
-  ],
-  python: [
-    {
-      id: '1',
-      name: 'main.py',
-      language: 'python',
-      content: `# Python Playground - Advanced Examples
+      },
+    ],
+  },
+  {
+    id: '7',
+    name: 'README.md',
+    type: 'file',
+    language: 'markdown',
+    content: `# DevBrain IDE
 
-def fibonacci(n):
-    """Generate Fibonacci sequence"""
-    sequence = []
-    a, b = 0, 1
-    for _ in range(n):
-        sequence.append(a)
-        a, b = b, a + b
-    return sequence
+Professional development environment built with Monaco Editor.
 
-def is_prime(n):
-    """Check if number is prime"""
-    if n < 2:
-        return False
-    for i in range(2, int(n ** 0.5) + 1):
-        if n % i == 0:
-            return False
-    return True
+## Features
 
-def main():
-    print("=" * 50)
-    print("🐍 Python Playground")
-    print("=" * 50)
+- ✨ Full VS Code editor engine
+- 📁 File tree explorer
+- 🚀 Live preview
+- 💻 Multi-tab editing
+- 🎨 Theme switcher
+- 📦 Auto-save
+- 🔍 Search & replace
+- 🌐 Multi-language support
 
-    # Fibonacci
-    fib = fibonacci(10)
-    print(f"\\nFibonacci (10): {fib}")
+## Supported Languages
 
-    # Prime numbers
-    primes = [n for n in range(2, 20) if is_prime(n)]
-    print(f"Primes (2-20): {primes}")
+- HTML, CSS, JavaScript
+- TypeScript, React, Vue, Angular
+- Python, PHP, Ruby, Go
+- Java, C++, C#, Rust
+- SQL, JSON, YAML, XML
+- And 50+ more...
 
-    # List comprehension
-    squares = {x: x**2 for x in range(1, 6)}
-    print(f"\\nSquares dict: {squares}")
-
-    # Lambda functions
-    operations = {
-        'add': lambda a, b: a + b,
-        'multiply': lambda a, b: a * b,
-    }
-    print(f"\\n5 + 3 = {operations['add'](5, 3)}")
-    print(f"5 * 3 = {operations['multiply'](5, 3)}")
-
-if __name__ == "__main__":
-    main()`,
-    },
-  ],
-  nodejs: [
-    {
-      id: '1',
-      name: 'index.js',
-      language: 'javascript',
-      content: `// Node.js Playground - Advanced Examples
-
-console.log('='.repeat(50));
-console.log('🟢 Node.js Playground');
-console.log('='.repeat(50));
-
-// Array Methods
-const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-
-const doubled = numbers.map(n => n * 2);
-console.log('\\nDoubled:', doubled);
-
-const evens = numbers.filter(n => n % 2 === 0);
-console.log('Evens:', evens);
-
-const sum = numbers.reduce((acc, n) => acc + n, 0);
-console.log('Sum:', sum);
-
-// Async/Await
-async function fetchUserData(userId) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({
-                id: userId,
-                name: 'John Doe',
-                role: 'Developer',
-                skills: ['JavaScript', 'React', 'Node.js']
-            });
-        }, 1000);
-    });
-}
-
-async function processData() {
-    console.log('\\nFetching user data...');
-    const user = await fetchUserData(123);
-    console.log('User:', JSON.stringify(user, null, 2));
-
-    // Destructuring
-    const { name, role, skills } = user;
-    console.log(\`\\n\${name} is a \${role}\`);
-    console.log('Skills:', skills.join(', '));
-}
-
-// ES6+ Features
-const greet = (name = 'World') => \`Hello, \${name}!\`;
-console.log('\\n' + greet('DevBrain'));
-
-// Run async function
-processData().then(() => {
-    console.log('\\n✅ Execution completed!');
-});`,
-    },
-  ],
-  sql: [
-    {
-      id: '1',
-      name: 'query.sql',
-      language: 'sql',
-      content: `-- SQL Playground - Advanced Queries
--- Professional database examples
-
--- ============================================
--- CREATE TABLES
--- ============================================
-
-CREATE TABLE IF NOT EXISTS users (
-    id SERIAL PRIMARY KEY,
-    username VARCHAR(50) UNIQUE NOT NULL,
-    email VARCHAR(100) UNIQUE NOT NULL,
-    role VARCHAR(20) DEFAULT 'user',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS posts (
-    id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id),
-    title VARCHAR(200) NOT NULL,
-    content TEXT,
-    views INTEGER DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS comments (
-    id SERIAL PRIMARY KEY,
-    post_id INTEGER REFERENCES posts(id),
-    user_id INTEGER REFERENCES users(id),
-    content TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================
--- INSERT SAMPLE DATA
--- ============================================
-
-INSERT INTO users (username, email, role) VALUES
-('admin', 'admin@devbrain.dev', 'admin'),
-('john_dev', 'john@example.com', 'developer'),
-('jane_designer', 'jane@example.com', 'designer'),
-('bob_user', 'bob@example.com', 'user');
-
-INSERT INTO posts (user_id, title, content, views) VALUES
-(1, 'Welcome to DevBrain', 'Our new platform for developers', 150),
-(2, 'JavaScript Tips', 'Advanced JS patterns and tricks', 320),
-(3, 'UI/UX Best Practices', 'Design principles for modern apps', 280);
-
--- ============================================
--- COMPLEX QUERIES
--- ============================================
-
--- Users with post counts
-SELECT
-    u.username,
-    u.role,
-    COUNT(p.id) as post_count,
-    SUM(p.views) as total_views
-FROM users u
-LEFT JOIN posts p ON u.id = p.user_id
-GROUP BY u.id, u.username, u.role
-ORDER BY total_views DESC;
-
--- Top posts with author info
-SELECT
-    p.title,
-    p.views,
-    u.username as author,
-    u.role,
-    p.created_at
-FROM posts p
-JOIN users u ON p.user_id = u.id
-WHERE p.views > 100
-ORDER BY p.views DESC
-LIMIT 10;
-
--- Subquery example
-SELECT username, email
-FROM users
-WHERE id IN (
-    SELECT DISTINCT user_id
-    FROM posts
-    WHERE views > 200
-);`,
-    },
-  ],
-};
+Built with ❤️ by DevBrain`,
+  },
+];
 
 export default function PlaygroundPage() {
-  const [mode, setMode] = useState<PlaygroundMode>('html-css-js');
-  const [files, setFiles] = useState<FileTab[]>(playgroundTemplates['html-css-js']);
-  const [activeFileId, setActiveFileId] = useState(files[0].id);
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('split');
-  const [showConsole, setShowConsole] = useState(true);
-  const [consoleOutput, setConsoleOutput] = useState<string[]>(['> Console ready. Run your code to see output...']);
+  const [fileTree, setFileTree] = useState<FileNode[]>(INITIAL_FILE_TREE);
+  const [tabs, setTabs] = useState<Tab[]>([
+    {
+      id: '2',
+      name: 'index.html',
+      language: 'html',
+      content: INITIAL_FILE_TREE[0].children![0].content!,
+      isDirty: false,
+    },
+  ]);
+  const [activeTabId, setActiveTabId] = useState('2');
   const [editorTheme, setEditorTheme] = useState<'vs-dark' | 'light'>('vs-dark');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [autoRun, setAutoRun] = useState(true);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const [showFileTree, setShowFileTree] = useState(true);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [showPreview, setShowPreview] = useState(true);
+  const [previewContent, setPreviewContent] = useState('');
+  const [terminalOutput, setTerminalOutput] = useState<string[]>([
+    '> DevBrain IDE Terminal',
+    '> Type "help" for available commands',
+    '',
+  ]);
+  const [terminalInput, setTerminalInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [layout, setLayout] = useState<'horizontal' | 'vertical'>('horizontal');
+  const editorRef = useRef<any>(null);
 
-  const activeFile = files.find((f) => f.id === activeFileId) || files[0];
+  const activeTab = tabs.find((t) => t.id === activeTabId);
 
-  // Auto-run preview after 1 second of inactivity
+  // Auto-save functionality
   useEffect(() => {
-    if (autoRun && mode === 'html-css-js') {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+    const interval = setInterval(() => {
+      const dirtyTabs = tabs.filter((t) => t.isDirty);
+      if (dirtyTabs.length > 0) {
+        handleSaveAll();
       }
-      timeoutRef.current = setTimeout(() => {
-        runCode();
-      }, 1000);
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [tabs]);
+
+  // Update preview when HTML/CSS/JS changes
+  useEffect(() => {
+    if (activeTab && showPreview) {
+      updatePreview();
     }
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+  }, [activeTab?.content, showPreview]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl/Cmd + S = Save
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSaveAll();
+      }
+      // Ctrl/Cmd + B = Toggle file tree
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        setShowFileTree(!showFileTree);
+      }
+      // Ctrl/Cmd + ` = Toggle terminal
+      if ((e.ctrlKey || e.metaKey) && e.key === '`') {
+        e.preventDefault();
+        setShowTerminal(!showTerminal);
+      }
+      // Ctrl/Cmd + P = Run code
+      if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
+        e.preventDefault();
+        handleRunCode();
       }
     };
-  }, [files, autoRun, mode]);
 
-  const updateFileContent = (content: string) => {
-    setFiles(files.map((f) => (f.id === activeFileId ? { ...f, content } : f)));
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showFileTree, showTerminal]);
+
+  const findFileInTree = (tree: FileNode[], id: string): FileNode | null => {
+    for (const node of tree) {
+      if (node.id === id) return node;
+      if (node.children) {
+        const found = findFileInTree(node.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
   };
 
-  const addNewFile = () => {
-    const fileNumber = files.length + 1;
-    const newFile: FileTab = {
-      id: Date.now().toString(),
-      name: `file${fileNumber}.js`,
-      language: 'javascript',
-      content: '// New file\n',
+  const updateFileContent = (tree: FileNode[], id: string, content: string): FileNode[] => {
+    return tree.map((node) => {
+      if (node.id === id) {
+        return { ...node, content };
+      }
+      if (node.children) {
+        return { ...node, children: updateFileContent(node.children, id, content) };
+      }
+      return node;
+    });
+  };
+
+  const toggleFolder = (id: string) => {
+    const updateTree = (tree: FileNode[]): FileNode[] => {
+      return tree.map((node) => {
+        if (node.id === id && node.type === 'folder') {
+          return { ...node, isOpen: !node.isOpen };
+        }
+        if (node.children) {
+          return { ...node, children: updateTree(node.children) };
+        }
+        return node;
+      });
     };
-    setFiles([...files, newFile]);
-    setActiveFileId(newFile.id);
+    setFileTree(updateTree(fileTree));
   };
 
-  const closeFile = (id: string) => {
-    if (files.length <= 1) return;
-    const newFiles = files.filter((f) => f.id !== id);
-    setFiles(newFiles);
-    if (activeFileId === id) {
-      setActiveFileId(newFiles[0].id);
+  const handleFileClick = (file: FileNode) => {
+    if (file.type === 'folder') {
+      toggleFolder(file.id);
+      return;
+    }
+
+    // Check if tab already exists
+    const existingTab = tabs.find((t) => t.id === file.id);
+    if (existingTab) {
+      setActiveTabId(file.id);
+      return;
+    }
+
+    // Create new tab
+    const newTab: Tab = {
+      id: file.id,
+      name: file.name,
+      language: file.language || 'plaintext',
+      content: file.content || '',
+      isDirty: false,
+    };
+    setTabs([...tabs, newTab]);
+    setActiveTabId(file.id);
+  };
+
+  const handleCloseTab = (tabId: string) => {
+    const tabIndex = tabs.findIndex((t) => t.id === tabId);
+    const newTabs = tabs.filter((t) => t.id !== tabId);
+    setTabs(newTabs);
+
+    if (activeTabId === tabId && newTabs.length > 0) {
+      const newActiveIndex = Math.max(0, tabIndex - 1);
+      setActiveTabId(newTabs[newActiveIndex].id);
     }
   };
 
-  const switchMode = (newMode: PlaygroundMode) => {
-    setMode(newMode);
-    const template = playgroundTemplates[newMode];
-    setFiles(template);
-    setActiveFileId(template[0].id);
-    setConsoleOutput(['> Console ready. Run your code to see output...']);
+  const handleEditorChange = (value: string | undefined) => {
+    if (!activeTab || value === undefined) return;
+
+    setTabs(
+      tabs.map((tab) =>
+        tab.id === activeTab.id ? { ...tab, content: value, isDirty: true } : tab
+      )
+    );
+
+    // Update file tree
+    setFileTree(updateFileContent(fileTree, activeTab.id, value));
   };
 
-  const getPreviewContent = () => {
-    if (mode !== 'html-css-js') return '';
-
-    const htmlFile = files.find((f) => f.name.endsWith('.html'));
-    const cssFile = files.find((f) => f.name.endsWith('.css'));
-    const jsFile = files.find((f) => f.name.endsWith('.js'));
-
-    let html = htmlFile?.content || '<p>No HTML file found</p>';
-
-    // Inject CSS
-    if (cssFile && html.includes('</head>')) {
-      html = html.replace('</head>', `<style>${cssFile.content}</style></head>`);
-    } else if (cssFile) {
-      html = `<style>${cssFile.content}</style>` + html;
-    }
-
-    // Inject console capture + JS
-    if (jsFile) {
-      const consoleScript = `
-        <script>
-          (function() {
-            const logs = [];
-            const originalLog = console.log;
-            const originalError = console.error;
-            const originalWarn = console.warn;
-
-            console.log = function(...args) {
-              originalLog.apply(console, args);
-              logs.push({ type: 'log', message: args.map(a => String(a)).join(' ') });
-              window.parent.postMessage({ type: 'console', logs }, '*');
-            };
-
-            console.error = function(...args) {
-              originalError.apply(console, args);
-              logs.push({ type: 'error', message: args.map(a => String(a)).join(' ') });
-              window.parent.postMessage({ type: 'console', logs }, '*');
-            };
-
-            console.warn = function(...args) {
-              originalWarn.apply(console, args);
-              logs.push({ type: 'warn', message: args.map(a => String(a)).join(' ') });
-              window.parent.postMessage({ type: 'console', logs }, '*');
-            };
-
-            window.onerror = function(msg, url, line) {
-              logs.push({ type: 'error', message: \`Error at line \${line}: \${msg}\` });
-              window.parent.postMessage({ type: 'console', logs }, '*');
-              return false;
-            };
-          })();
-        </script>
-      `;
-
-      if (html.includes('</head>')) {
-        html = html.replace('</head>', `${consoleScript}</head>`);
-      } else {
-        html = consoleScript + html;
-      }
-
-      if (html.includes('</body>')) {
-        html = html.replace('</body>', `<script>${jsFile.content}</script></body>`);
-      } else {
-        html += `<script>${jsFile.content}</script>`;
-      }
-    }
-
-    return html;
+  const handleSaveAll = () => {
+    setIsSaving(true);
+    setTabs(tabs.map((tab) => ({ ...tab, isDirty: false })));
+    setLastSaved(new Date());
+    setTimeout(() => setIsSaving(false), 500);
   };
 
-  // Listen for console messages from iframe
+  const handleRunCode = () => {
+    addTerminalOutput('> Running code...');
+    updatePreview();
+    setTimeout(() => {
+      addTerminalOutput('✓ Code executed successfully');
+    }, 500);
+  };
+
+  const updatePreview = () => {
+    const htmlFile = tabs.find((t) => t.language === 'html') ||
+                     findFileInTree(fileTree, '2');
+    const cssFile = tabs.find((t) => t.language === 'css') ||
+                    findFileInTree(fileTree, '3');
+    const jsFile = tabs.find((t) => t.language === 'javascript') ||
+                   findFileInTree(fileTree, '4');
+
+    const html = htmlFile?.content || (htmlFile as any)?.content || '';
+    const css = cssFile?.content || (cssFile as any)?.content || '';
+    const js = jsFile?.content || (jsFile as any)?.content || '';
+
+    // Inject console capture
+    const consoleScript = `
+      <script>
+        (function() {
+          const logs = [];
+          const originalLog = console.log;
+          const originalError = console.error;
+          const originalWarn = console.warn;
+
+          console.log = function(...args) {
+            originalLog.apply(console, args);
+            logs.push({ type: 'log', message: args.join(' ') });
+            window.parent.postMessage({ type: 'console', logs }, '*');
+          };
+
+          console.error = function(...args) {
+            originalError.apply(console, args);
+            logs.push({ type: 'error', message: args.join(' ') });
+            window.parent.postMessage({ type: 'console', logs }, '*');
+          };
+
+          console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            logs.push({ type: 'warn', message: args.join(' ') });
+            window.parent.postMessage({ type: 'console', logs }, '*');
+          };
+
+          window.addEventListener('error', function(e) {
+            logs.push({ type: 'error', message: e.message });
+            window.parent.postMessage({ type: 'console', logs }, '*');
+          });
+        })();
+      </script>
+    `;
+
+    let fullHtml = html;
+    if (css && !html.includes('<style>')) {
+      fullHtml = fullHtml.replace('</head>', `<style>${css}</style></head>`);
+    }
+    if (js && !html.includes('<script>')) {
+      fullHtml = fullHtml.replace('</body>', `<script>${js}</script></body>`);
+    }
+    fullHtml = fullHtml.replace('</head>', `${consoleScript}</head>`);
+
+    setPreviewContent(fullHtml);
+  };
+
+  const addTerminalOutput = (output: string) => {
+    setTerminalOutput((prev) => [...prev, output]);
+  };
+
+  const handleTerminalCommand = (command: string) => {
+    addTerminalOutput(`> ${command}`);
+
+    const cmd = command.trim().toLowerCase();
+    if (cmd === 'help') {
+      addTerminalOutput('Available commands:');
+      addTerminalOutput('  help     - Show this help message');
+      addTerminalOutput('  clear    - Clear terminal');
+      addTerminalOutput('  run      - Run current code');
+      addTerminalOutput('  save     - Save all files');
+      addTerminalOutput('  tree     - Show file tree');
+      addTerminalOutput('  theme    - Toggle editor theme');
+    } else if (cmd === 'clear') {
+      setTerminalOutput([]);
+    } else if (cmd === 'run') {
+      handleRunCode();
+    } else if (cmd === 'save') {
+      handleSaveAll();
+      addTerminalOutput('✓ All files saved');
+    } else if (cmd === 'tree') {
+      addTerminalOutput('File structure:');
+      addTerminalOutput('  src/');
+      addTerminalOutput('    index.html');
+      addTerminalOutput('    styles.css');
+      addTerminalOutput('    script.js');
+      addTerminalOutput('  components/');
+      addTerminalOutput('    App.tsx');
+      addTerminalOutput('  README.md');
+    } else if (cmd === 'theme') {
+      setEditorTheme(editorTheme === 'vs-dark' ? 'light' : 'vs-dark');
+      addTerminalOutput(`✓ Theme switched to ${editorTheme === 'vs-dark' ? 'light' : 'dark'}`);
+    } else {
+      addTerminalOutput(`Command not found: ${command}`);
+    }
+
+    setTerminalInput('');
+  };
+
+  const handleDownloadProject = () => {
+    const files: { [key: string]: string } = {};
+    tabs.forEach((tab) => {
+      files[tab.name] = tab.content;
+    });
+    const blob = new Blob([JSON.stringify(files, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `devbrain-project-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const renderFileTree = (nodes: FileNode[], depth: number = 0) => {
+    return nodes.map((node) => (
+      <div key={node.id}>
+        <div
+          className={`flex items-center gap-2 px-2 py-1.5 hover:bg-gray-700/50 cursor-pointer rounded transition-colors ${
+            activeTabId === node.id ? 'bg-purple-600/30' : ''
+          }`}
+          style={{ paddingLeft: `${depth * 12 + 8}px` }}
+          onClick={() => handleFileClick(node)}
+        >
+          {node.type === 'folder' ? (
+            <>
+              <ChevronRight
+                className={`w-3 h-3 transition-transform ${node.isOpen ? 'rotate-90' : ''}`}
+              />
+              <Folder className="w-4 h-4 text-yellow-500" />
+            </>
+          ) : (
+            <>
+              <div className="w-3" />
+              <File className="w-4 h-4 text-blue-400" />
+            </>
+          )}
+          <span className="text-sm text-gray-300">{node.name}</span>
+        </div>
+        {node.type === 'folder' && node.isOpen && node.children && (
+          <div>{renderFileTree(node.children, depth + 1)}</div>
+        )}
+      </div>
+    ));
+  };
+
+  // Listen for console messages from preview iframe
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data.type === 'console') {
-        const output = event.data.logs.map((log: any) =>
-          `${log.type === 'error' ? '[ERROR]' : log.type === 'warn' ? '[WARN]' : '>'} ${log.message}`
-        );
-        setConsoleOutput(output.length > 0 ? output : ['> No console output']);
+        const logs = event.data.logs;
+        logs.forEach((log: { type: string; message: string }) => {
+          const prefix = log.type === 'error' ? '❌' : log.type === 'warn' ? '⚠️' : '>';
+          addTerminalOutput(`${prefix} ${log.message}`);
+        });
       }
     };
-
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
   }, []);
 
-  const runCode = () => {
-    if (mode === 'html-css-js') {
-      if (iframeRef.current) {
-        const content = getPreviewContent();
-        iframeRef.current.srcdoc = content;
-      }
-    } else {
-      // Simulate execution for other languages
-      const timestamp = new Date().toLocaleTimeString();
-      const outputs = [
-        `> [${timestamp}] Executing ${mode.toUpperCase()} code...`,
-        `> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        files[0].content.split('\n').slice(0, 10).map(line => `  ${line}`).join('\n'),
-        `> ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`,
-        `> ✅ Execution completed successfully`,
-      ];
-      setConsoleOutput(outputs);
-    }
-  };
-
-  const openPreviewInNewTab = () => {
-    const content = getPreviewContent();
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(content);
-      newWindow.document.close();
-    }
-  };
-
-  const downloadCode = () => {
-    files.forEach(file => {
-      const blob = new Blob([file.content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = file.name;
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-  };
-
-  const formatCode = () => {
-    // Simple formatting - in real app use Prettier
-    if (activeFile.language === 'javascript') {
-      const formatted = activeFile.content; // Would use prettier here
-      updateFileContent(formatted);
-    }
-  };
-
-  return (
-    <div className={`flex flex-col ${isFullscreen ? 'fixed inset-0 z-50 bg-gray-950' : 'h-[calc(100vh-8rem)]'}`}>
-      {/* Top Bar */}
-      <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 border-b border-gray-700">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/50">
-              <Code className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold text-white">Code Playground</h2>
-              <p className="text-xs text-gray-400">Live coding environment</p>
-            </div>
+  const mainContent = (
+    <div className="flex h-full">
+      {/* File Tree */}
+      {showFileTree && (
+        <div className="w-64 bg-[#252526] border-r border-gray-700 flex flex-col overflow-hidden flex-shrink-0">
+          <div className="h-10 border-b border-gray-700 flex items-center px-3">
+            <FolderTree className="w-4 h-4 mr-2 text-purple-400" />
+            <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+              Explorer
+            </span>
           </div>
+          <div className="flex-1 overflow-y-auto p-2">{renderFileTree(fileTree)}</div>
+        </div>
+      )}
 
-          {/* Mode Switcher */}
-          <div className="flex gap-1 bg-gray-800/50 p-1 rounded-lg border border-gray-700">
-            {(['html-css-js', 'react', 'python', 'nodejs', 'sql'] as PlaygroundMode[]).map((m) => (
+      {/* Editor Area */}
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
+        {/* Tabs */}
+        <div className="h-10 bg-[#2d2d2d] border-b border-gray-700 flex items-center overflow-x-auto flex-shrink-0">
+          {tabs.map((tab) => (
+            <div
+              key={tab.id}
+              className={`flex items-center gap-2 px-4 h-full border-r border-gray-700 cursor-pointer transition-colors flex-shrink-0 ${
+                activeTabId === tab.id ? 'bg-[#1e1e1e]' : 'hover:bg-[#252526]'
+              }`}
+              onClick={() => setActiveTabId(tab.id)}
+            >
+              <FileCode className="w-3 h-3 text-blue-400" />
+              <span className="text-xs text-gray-300">{tab.name}</span>
+              {tab.isDirty && <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />}
               <button
-                key={m}
-                onClick={() => switchMode(m)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                  mode === m
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/50'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-700'
-                }`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCloseTab(tab.id);
+                }}
+                className="ml-1 hover:bg-gray-600 rounded p-0.5"
               >
-                {m.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('/')}
+                <X className="w-3 h-3 text-gray-400" />
               </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Auto-run toggle */}
-          <button
-            onClick={() => setAutoRun(!autoRun)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              autoRun
-                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                : 'bg-gray-700 text-gray-400 border border-gray-600'
-            }`}
-          >
-            <Zap className="w-3 h-3" />
-            Auto-run
-          </button>
-
-          <button
-            onClick={runCode}
-            className="flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white rounded-lg text-xs font-semibold shadow-lg shadow-green-500/30 transition-all"
-          >
-            <Play className="w-3 h-3" />
-            Run Code
-          </button>
-
-          <button
-            onClick={() => setEditorTheme(editorTheme === 'vs-dark' ? 'light' : 'vs-dark')}
-            className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all"
-            title="Toggle theme"
-          >
-            {editorTheme === 'vs-dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
-
-          <button
-            onClick={formatCode}
-            className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all"
-            title="Format code"
-          >
-            <AlignLeft className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={downloadCode}
-            className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all"
-            title="Download"
-          >
-            <Download className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => setIsFullscreen(!isFullscreen)}
-            className="p-1.5 rounded-lg bg-gray-700 hover:bg-gray-600 text-gray-300 transition-all"
-            title="Fullscreen"
-          >
-            {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-          </button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Editor */}
-        {layoutMode !== 'preview-only' && (
-          <div className="flex-1 flex flex-col bg-gray-950 border-r border-gray-800">
-            {/* File Tabs */}
-            <div className="flex items-center gap-1 bg-gray-900 px-2 py-2 border-b border-gray-800 overflow-x-auto">
-              {files.map((file) => (
-                <div
-                  key={file.id}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs cursor-pointer transition-all ${
-                    activeFileId === file.id
-                      ? 'bg-gray-950 text-purple-400 shadow-lg'
-                      : 'text-gray-400 hover:bg-gray-800 hover:text-white'
-                  }`}
-                  onClick={() => setActiveFileId(file.id)}
-                >
-                  <FileCode className="w-3 h-3" />
-                  <span className="whitespace-nowrap font-medium">{file.name}</span>
-                  {files.length > 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeFile(file.id);
-                      }}
-                      className="hover:text-red-400 transition-colors"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              ))}
-              {mode === 'html-css-js' && (
-                <button
-                  onClick={addNewFile}
-                  className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-500 hover:text-purple-400 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                </button>
-              )}
             </div>
+          ))}
+        </div>
 
-            {/* Monaco Editor */}
-            <div className="flex-1">
+        {/* Editor & Preview Layout */}
+        <div className={`flex-1 flex ${layout === 'vertical' ? 'flex-col' : 'flex-row'} overflow-hidden`}>
+          {/* Monaco Editor */}
+          <div className="flex-1 overflow-hidden">
+            {activeTab ? (
               <MonacoEditor
                 height="100%"
-                language={activeFile.language}
+                language={activeTab.language}
                 theme={editorTheme}
-                value={activeFile.content}
-                onChange={(value) => updateFileContent(value || '')}
+                value={activeTab.content}
+                onChange={handleEditorChange}
+                onMount={(editor) => {
+                  editorRef.current = editor;
+                }}
                 options={{
                   minimap: { enabled: true },
                   fontSize: 14,
                   lineNumbers: 'on',
+                  roundedSelection: true,
                   scrollBeyondLastLine: false,
-                  wordWrap: 'on',
                   automaticLayout: true,
-                  padding: { top: 16, bottom: 16 },
-                  smoothScrolling: true,
-                  cursorBlinking: 'smooth',
-                  cursorSmoothCaretAnimation: 'on',
-                  folding: true,
-                  bracketPairColorization: { enabled: true },
+                  tabSize: 2,
+                  wordWrap: 'on',
                   formatOnPaste: true,
                   formatOnType: true,
-                  suggest: {
-                    snippetsPreventQuickSuggestions: false,
-                  },
+                  suggestOnTriggerCharacters: true,
+                  quickSuggestions: true,
+                  folding: true,
+                  bracketPairColorization: { enabled: true },
                 }}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full bg-[#1e1e1e] text-gray-500">
+                <p>No file selected</p>
+              </div>
+            )}
+          </div>
+
+          {/* Live Preview */}
+          {showPreview && (
+            <div className="flex-1 bg-white overflow-hidden border-l border-gray-700 flex flex-col">
+              <div className="h-10 bg-[#2d2d2d] border-b border-gray-700 flex items-center justify-between px-3 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                    Live Preview
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 px-2 text-xs text-gray-300 hover:bg-gray-700"
+                    onClick={() => window.open('', '_blank')?.document.write(previewContent)}
+                  >
+                    Open in New Tab
+                  </Button>
+                </div>
+              </div>
+              <iframe
+                srcDoc={previewContent}
+                className="flex-1 w-full bg-white"
+                title="preview"
+                sandbox="allow-scripts allow-modals allow-forms allow-popups"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Terminal */}
+        {showTerminal && (
+          <div className="h-48 bg-[#1e1e1e] border-t border-gray-700 flex flex-col flex-shrink-0">
+            <div className="h-8 bg-[#2d2d2d] border-b border-gray-700 flex items-center px-3">
+              <TerminalIcon className="w-3 h-3 mr-2 text-green-400" />
+              <span className="text-xs font-semibold text-gray-300 uppercase tracking-wide">
+                Terminal
+              </span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 font-mono text-xs text-gray-300">
+              {terminalOutput.map((line, i) => (
+                <div key={i} className="mb-1">
+                  {line}
+                </div>
+              ))}
+            </div>
+            <div className="h-8 bg-[#252526] border-t border-gray-700 flex items-center px-3">
+              <span className="text-green-400 mr-2">$</span>
+              <input
+                type="text"
+                value={terminalInput}
+                onChange={(e) => setTerminalInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleTerminalCommand(terminalInput);
+                  }
+                }}
+                className="flex-1 bg-transparent border-none outline-none text-xs text-gray-300 font-mono"
+                placeholder="Type command..."
               />
             </div>
           </div>
         )}
+      </div>
+    </div>
+  );
 
-        {/* Preview & Console */}
-        {layoutMode !== 'editor-only' && (
-          <div className="flex-1 flex flex-col bg-gray-900">
-            {/* Preview */}
-            {(mode === 'html-css-js' || mode === 'react') && (
-              <div className="flex-1 flex flex-col border-b border-gray-800">
-                <div className="flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
-                  <div className="flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-purple-400" />
-                    <span className="text-xs font-semibold text-white">Live Preview</span>
-                    {autoRun && (
-                      <Badge className="bg-green-500/20 text-green-400 text-xs px-2 py-0 border border-green-500/30">
-                        Auto-updating
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={openPreviewInNewTab}
-                      className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded text-xs text-gray-300 transition-all"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      Open
-                    </button>
-                    <button
-                      onClick={() => runCode()}
-                      className="p-1 bg-gray-700 hover:bg-gray-600 rounded text-gray-300 transition-all"
-                      title="Refresh preview"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                    </button>
-                  </div>
-                </div>
-                <div className="flex-1 bg-white overflow-auto">
-                  <iframe
-                    ref={iframeRef}
-                    srcDoc={getPreviewContent()}
-                    className="w-full h-full border-0"
-                    sandbox="allow-scripts"
-                  />
-                </div>
-              </div>
-            )}
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            DevBrain IDE
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Professional development environment powered by Monaco Editor
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {lastSaved && (
+            <div className="text-xs text-gray-500 flex items-center gap-1">
+              {isSaving ? (
+                <>
+                  <Save className="w-3 h-3 animate-pulse" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="w-3 h-3 text-green-500" />
+                  Saved {lastSaved.toLocaleTimeString()}
+                </>
+              )}
+            </div>
+          )}
+          <Badge className="bg-gradient-to-r from-purple-500 to-blue-500 text-white border-0">
+            <Zap className="w-3 h-3 mr-1" />
+            Monaco Editor
+          </Badge>
+        </div>
+      </div>
 
-            {/* Console */}
-            {showConsole && (
-              <div className="h-64 flex flex-col bg-gray-950">
-                <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
-                  <div className="flex items-center gap-2">
-                    <Terminal className="w-4 h-4 text-green-400" />
-                    <span className="text-xs font-semibold text-white">Console</span>
-                  </div>
-                  <button
-                    onClick={() => setConsoleOutput(['> Console cleared'])}
-                    className="text-xs text-gray-400 hover:text-white transition-colors"
-                  >
-                    Clear
-                  </button>
-                </div>
-                <div className="flex-1 overflow-y-auto p-3 font-mono text-xs">
-                  {consoleOutput.map((line, i) => (
-                    <div
-                      key={i}
-                      className={`mb-1 leading-relaxed ${
-                        line.includes('[ERROR]')
-                          ? 'text-red-400'
-                          : line.includes('[WARN]')
-                          ? 'text-yellow-400'
-                          : 'text-green-400'
-                      }`}
-                    >
-                      {line}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* Toolbar */}
+      <Card className="border-gray-200 dark:border-gray-700">
+        <CardContent className="p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleRunCode}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+              >
+                <Play className="w-3 h-3 mr-1" />
+                Run
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSaveAll}
+                disabled={!tabs.some((t) => t.isDirty)}
+              >
+                <Save className="w-3 h-3 mr-1" />
+                Save All
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleDownloadProject}>
+                <Download className="w-3 h-3 mr-1" />
+                Export
+              </Button>
+              <div className="w-px h-6 bg-gray-300 dark:bg-gray-600 mx-2" />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowFileTree(!showFileTree)}
+                className={showFileTree ? 'bg-purple-50 dark:bg-purple-900/20' : ''}
+              >
+                <FolderTree className="w-3 h-3 mr-1" />
+                Explorer
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowTerminal(!showTerminal)}
+                className={showTerminal ? 'bg-purple-50 dark:bg-purple-900/20' : ''}
+              >
+                <TerminalIcon className="w-3 h-3 mr-1" />
+                Terminal
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setShowPreview(!showPreview)}
+                className={showPreview ? 'bg-purple-50 dark:bg-purple-900/20' : ''}
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                Preview
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  setLayout(layout === 'horizontal' ? 'vertical' : 'horizontal')
+                }
+              >
+                <Layers className="w-3 h-3 mr-1" />
+                {layout === 'horizontal' ? 'Horizontal' : 'Vertical'}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setEditorTheme(editorTheme === 'vs-dark' ? 'light' : 'vs-dark')}
+              >
+                {editorTheme === 'vs-dark' ? (
+                  <>
+                    <Sun className="w-3 h-3 mr-1" />
+                    Light
+                  </>
+                ) : (
+                  <>
+                    <Moon className="w-3 h-3 mr-1" />
+                    Dark
+                  </>
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setIsFullscreen(!isFullscreen)}
+              >
+                {isFullscreen ? (
+                  <>
+                    <Minimize2 className="w-3 h-3 mr-1" />
+                    Exit
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="w-3 h-3 mr-1" />
+                    Fullscreen
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
-        )}
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Bottom Bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-gray-900 border-t border-gray-800">
-        <div className="flex items-center gap-4 text-xs text-gray-400">
-          <span className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            Ready
-          </span>
-          <span>{mode.toUpperCase()}</span>
-          <span>{activeFile.name}</span>
-          <span>{activeFile.content.split('\n').length} lines</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setLayoutMode(layoutMode === 'split' ? 'editor-only' : layoutMode === 'editor-only' ? 'preview-only' : 'split')}
-            className="flex items-center gap-1 px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 text-xs text-gray-300 transition-all"
-          >
-            <SplitSquareHorizontal className="w-3 h-3" />
-            {layoutMode === 'split' ? 'Split' : layoutMode === 'editor-only' ? 'Editor' : 'Preview'}
-          </button>
-          <button
-            onClick={() => setShowConsole(!showConsole)}
-            className={`px-2 py-1 rounded text-xs transition-all ${
-              showConsole
-                ? 'bg-purple-500/20 text-purple-400'
-                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-            }`}
-          >
-            Console
-          </button>
-        </div>
-      </div>
+      {/* IDE Container */}
+      {isFullscreen ? (
+        <div className="fixed inset-0 z-50 bg-[#1e1e1e]">{mainContent}</div>
+      ) : (
+        <Card className="border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="h-[700px]">{mainContent}</div>
+        </Card>
+      )}
+
+      {/* Keyboard Shortcuts Info */}
+      <Card className="border-gray-200 dark:border-gray-700">
+        <CardContent className="p-4">
+          <h3 className="text-sm font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
+            <Code2 className="w-4 h-4 text-purple-600" />
+            Keyboard Shortcuts
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+            <div>
+              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
+                Ctrl+S
+              </kbd>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">Save All</span>
+            </div>
+            <div>
+              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
+                Ctrl+P
+              </kbd>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">Run Code</span>
+            </div>
+            <div>
+              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
+                Ctrl+B
+              </kbd>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">Toggle Explorer</span>
+            </div>
+            <div>
+              <kbd className="px-2 py-1 bg-gray-100 dark:bg-gray-800 rounded border border-gray-300 dark:border-gray-600">
+                Ctrl+`
+              </kbd>
+              <span className="ml-2 text-gray-600 dark:text-gray-400">Toggle Terminal</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
