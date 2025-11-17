@@ -217,8 +217,109 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto">
-          <div className="container mx-auto p-6 max-w-[1920px]">{children}</div>
+        <main className="flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="min-h-full">
+            <div className="container mx-auto p-6 pb-8 max-w-[1920px]">{children}</div>
+
+            {/* Footer */}
+            <footer className="border-t border-gray-200/50 dark:border-gray-700/50 bg-white/50 dark:bg-gray-900/50 backdrop-blur-sm mt-16">
+              <div className="container mx-auto px-6 py-8 max-w-[1920px]">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                  {/* Brand */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
+                        <Brain className="w-5 h-5 text-white" />
+                      </div>
+                      <span className="text-lg font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+                        DevBrain
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                      All-in-one developer control panel for modern teams. Manage servers, code, workflows, and more.
+                    </p>
+                  </div>
+
+                  {/* Product */}
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4">Product</h4>
+                    <ul className="space-y-2.5">
+                      {[
+                        { name: 'Dashboard', href: '/dashboard' },
+                        { name: 'Playground', href: '/playground' },
+                        { name: 'Projects', href: '/projects' },
+                        { name: 'Workflows', href: '/workflows' },
+                      ].map((item) => (
+                        <li key={item.name}>
+                          <Link
+                            href={item.href}
+                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                          >
+                            {item.name}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Resources */}
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4">Resources</h4>
+                    <ul className="space-y-2.5">
+                      {['Documentation', 'API Reference', 'Tutorials', 'Blog'].map((item) => (
+                        <li key={item}>
+                          <a
+                            href="#"
+                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                          >
+                            {item}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Company */}
+                  <div>
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white mb-4">Company</h4>
+                    <ul className="space-y-2.5">
+                      {['About', 'Careers', 'Contact', 'Privacy'].map((item) => (
+                        <li key={item}>
+                          <a
+                            href="#"
+                            className="text-sm text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
+                          >
+                            {item}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Bottom Bar */}
+                <div className="pt-6 border-t border-gray-200/50 dark:border-gray-700/50 flex flex-col md:flex-row items-center justify-between gap-4">
+                  <p className="text-xs text-gray-500 dark:text-gray-500">
+                    © 2024 DevBrain. All rights reserved.
+                  </p>
+                  <div className="flex items-center gap-6">
+                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                      Terms
+                    </a>
+                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                      Privacy
+                    </a>
+                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                      Security
+                    </a>
+                    <a href="#" className="text-xs text-gray-500 hover:text-purple-600 dark:hover:text-purple-400 transition-colors">
+                      Status
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </footer>
+          </div>
         </main>
       </div>
 
