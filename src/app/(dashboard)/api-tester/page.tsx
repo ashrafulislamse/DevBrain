@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Send, Copy, Download } from 'lucide-react';
+import { Send, Copy, Download, Zap, Lock, Save } from 'lucide-react';
 
 const methods = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
 
@@ -111,21 +111,27 @@ export default function APITesterPage() {
       <div className="grid md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">⚡</div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center mb-3 shadow-lg">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
             <h3 className="font-semibold mt-2">Fast Testing</h3>
             <p className="text-sm text-muted-foreground">Test APIs in milliseconds</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">🔐</div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center mb-3 shadow-lg">
+              <Lock className="w-6 h-6 text-white" />
+            </div>
             <h3 className="font-semibold mt-2">Auth Support</h3>
             <p className="text-sm text-muted-foreground">Bearer, API Key, OAuth</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <div className="text-2xl font-bold">💾</div>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center mb-3 shadow-lg">
+              <Save className="w-6 h-6 text-white" />
+            </div>
             <h3 className="font-semibold mt-2">Save Collections</h3>
             <p className="text-sm text-muted-foreground">Organize and reuse requests</p>
           </CardContent>

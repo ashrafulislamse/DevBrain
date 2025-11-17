@@ -74,7 +74,7 @@ const playgroundTemplates: Record<PlaygroundMode, FileTab[]> = {
 <body>
     <div class="container">
         <div class="card">
-            <h1>🚀 DevBrain Playground</h1>
+            <h1>DevBrain Playground</h1>
             <p>Professional code editor with live preview</p>
             <button onclick="handleClick()" class="btn">Click Me</button>
             <div id="output"></div>
@@ -190,10 +190,10 @@ p {
       name: 'script.js',
       language: 'javascript',
       content: `function handleClick() {
-    console.log('Button clicked! 🎉');
+    console.log('Button clicked!');
 
     const output = document.getElementById('output');
-    output.textContent = '✨ Success! You clicked the button!';
+    output.textContent = 'Success! You clicked the button!';
 
     setTimeout(() => {
         output.textContent = '';
