@@ -31,6 +31,10 @@ import {
   Wrench,
   Receipt,
   FileSignature,
+  Shield,
+  FileCode,
+  TrendingUp,
+  CreditCard,
 } from 'lucide-react';
 
 const navigation = [
@@ -46,6 +50,11 @@ const navigation = [
   { name: 'Freelance', href: '/freelance', icon: Briefcase },
   { name: 'Invoices', href: '/invoices', icon: Receipt },
   { name: 'Proposals', href: '/proposals', icon: FileSignature },
+  { name: 'Contracts', href: '/contracts', icon: FileSignature },
+  { name: 'Security', href: '/security', icon: Shield, badge: '5' },
+  { name: 'Config Gen', href: '/config-generators', icon: FileCode },
+  { name: 'SEO Suite', href: '/seo-suite', icon: TrendingUp, badge: '6' },
+  { name: 'Stripe', href: '/integrations/stripe', icon: CreditCard },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Bot },
   { name: 'Monitoring', href: '/monitoring', icon: Activity },
   { name: 'Logs', href: '/logs', icon: FileText },
