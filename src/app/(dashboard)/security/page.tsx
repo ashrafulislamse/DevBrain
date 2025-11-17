@@ -714,7 +714,8 @@ export default function SecurityPage() {
                     <>
                       <Server className="w-4 h-4 mr-2" />
                       Scan Ports
-                    </>\n                  )}
+                    </>
+                  )}
                 </Button>
               </div>
               <p className="text-xs text-gray-500 mt-1">
