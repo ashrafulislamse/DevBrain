@@ -29,6 +29,8 @@ import {
   Briefcase,
   Bot,
   Wrench,
+  Receipt,
+  FileSignature,
 } from 'lucide-react';
 
 const navigation = [
@@ -42,6 +44,8 @@ const navigation = [
   { name: 'Dev Tools', href: '/dev-tools', icon: Wrench, badge: '12' },
   { name: 'Workflows', href: '/workflows', icon: Workflow },
   { name: 'Freelance', href: '/freelance', icon: Briefcase },
+  { name: 'Invoices', href: '/invoices', icon: Receipt },
+  { name: 'Proposals', href: '/proposals', icon: FileSignature },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Bot },
   { name: 'Monitoring', href: '/monitoring', icon: Activity },
   { name: 'Logs', href: '/logs', icon: FileText },
