@@ -28,6 +28,7 @@ import {
   Workflow,
   Briefcase,
   Bot,
+  Wrench,
 } from 'lucide-react';
 
 const navigation = [
@@ -38,6 +39,7 @@ const navigation = [
   { name: 'Playground', href: '/playground', icon: Code },
   { name: 'API Tester', href: '/api-tester', icon: Plug },
   { name: 'Converters', href: '/converters', icon: RefreshCw },
+  { name: 'Dev Tools', href: '/dev-tools', icon: Wrench, badge: '12' },
   { name: 'Workflows', href: '/workflows', icon: Workflow },
   { name: 'Freelance', href: '/freelance', icon: Briefcase },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Bot },
