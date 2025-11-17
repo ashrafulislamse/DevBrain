@@ -38,6 +38,9 @@ import {
   Zap,
   Users as UsersIcon,
   Terminal as TerminalIcon,
+  Wand2,
+  Wordpress,
+  GitBranch,
 } from 'lucide-react';
 
 const navigation = [
@@ -60,6 +63,9 @@ const navigation = [
   { name: 'SEO Suite', href: '/seo-suite', icon: TrendingUp, badge: '6' },
   { name: 'SSH Terminal', href: '/ssh-terminal', icon: TerminalIcon },
   { name: 'AI DevOps', href: '/ai-devops', icon: Zap, badge: '8' },
+  { name: 'AI Advanced', href: '/ai-advanced', icon: GitBranch, badge: '6' },
+  { name: 'Client Tools', href: '/client-tools', icon: Wand2, badge: '4' },
+  { name: 'WordPress', href: '/wordpress', icon: Wordpress, badge: '8' },
   { name: 'Stripe', href: '/integrations/stripe', icon: CreditCard },
   { name: 'Advanced Int', href: '/integrations/advanced', icon: Plug },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Bot },
