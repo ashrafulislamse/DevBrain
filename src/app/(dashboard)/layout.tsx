@@ -41,6 +41,12 @@ import {
   Wand2,
   Globe as Wordpress,
   GitBranch,
+  Database,
+  Image as ImageIcon,
+  BookOpen,
+  BarChart3,
+  Sparkles,
+  GitPullRequest,
 } from 'lucide-react';
 
 const navigation = [
@@ -66,6 +72,13 @@ const navigation = [
   { name: 'AI Advanced', href: '/ai-advanced', icon: GitBranch, badge: '6' },
   { name: 'Client Tools', href: '/client-tools', icon: Wand2, badge: '4' },
   { name: 'WordPress', href: '/wordpress', icon: Wordpress, badge: '8' },
+  { name: 'Database', href: '/database', icon: Database, badge: '6' },
+  { name: 'Git Manager', href: '/git-manager', icon: GitPullRequest, badge: '6' },
+  { name: 'Media Tools', href: '/media-tools', icon: ImageIcon, badge: '6' },
+  { name: 'Knowledge', href: '/knowledge-base', icon: BookOpen, badge: '5' },
+  { name: 'Notifications', href: '/notifications', icon: Bell },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3, badge: '4' },
+  { name: 'AI Docs', href: '/ai-docs', icon: Sparkles, badge: '4' },
   { name: 'Stripe', href: '/integrations/stripe', icon: CreditCard },
   { name: 'Advanced Int', href: '/integrations/advanced', icon: Plug },
   { name: 'AI Assistant', href: '/ai-assistant', icon: Bot },
